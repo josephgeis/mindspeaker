@@ -39,7 +39,8 @@ async def nuke(ctx, channel_arg=None):
     if channel is None:
         return
 
-    await channel.purge(limit=None, check=None)
+    async with channel.typing():
+        await channel.purge(limit=None, check=None)
 
     await ctx.send("Channel nuked!\nhttps://media.giphy.com/media/oe33xf3B50fsc/giphy.gif", delete_after=3)
 
