@@ -1,12 +1,45 @@
 from discord.ext.commands import Bot
 import discord.ext.commands as commands
+import discord
 import config
 import re
 
 
 class MindspeakerBot(Bot):
+    async def init_verification_channels(self):
+        """
+        Initializes #verify channels (or similar).
+        """
+
+        self.verification = dict()
+        for chan, role in config.VERIFICATION_CHANNELS:
+            channel = self.get_channel(chan)
+            async with channel.typing():
+                await channel.purge(limit=None, check=None)
+                message: discord.Message = await channel.send("By reacting to this message, you agree to abide by this server's rules")
+                await message.add_reaction(u"\u2705")
+                self.verification[message.id] = role
+
     async def on_ready(self):
         print(f"Connected to Discord as {self.user}.")
+
+        # initialize verification channel
+        await self.init_verification_channels()
+
+    async def on_reaction_add(self, reaction: discord.Reaction, user: discord.Member):
+        """
+        Handles reactions added. Only for #verify channels rn.
+        """
+
+        if user.id == self.user.id:
+            return
+
+        message: discord.Message = reaction.message
+        if message.id in self.verification.keys():
+            role_id = self.verification[message.id]
+            role = message.guild.get_role(role_id)
+            await user.add_roles(role)
+            await reaction.remove(user)
 
 
 bot = MindspeakerBot(config.PREFIX)
