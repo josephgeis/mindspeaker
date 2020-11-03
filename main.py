@@ -11,14 +11,13 @@ class MindspeakerBot(Bot):
         Initializes #verify channels (or similar).
         """
 
-        self.verification = dict()
         for chan, role in config.VERIFICATION_CHANNELS:
             channel = self.get_channel(chan)
             async with channel.typing():
                 await channel.purge(limit=None, check=None)
                 message: discord.Message = await channel.send("By reacting to this message, you agree to abide by this server's rules")
                 await message.add_reaction(u"\u2705")
-                self.verification[message.id] = role
+                self.verification_assignments[message.id] = role
 
     async def on_ready(self):
         print(f"Connected to Discord as {self.user}.")
@@ -35,15 +34,19 @@ class MindspeakerBot(Bot):
             return
 
         message: discord.Message = reaction.message
-        if message.id in self.verification.keys():
-            role_id = self.verification[message.id]
+        if message.id in self.verification_assignments.keys():
+            role_id = self.verification_assignments[message.id]
             role = message.guild.get_role(role_id)
             await user.add_roles(role)
             await reaction.remove(user)
 
     async def on_raw_message_delete(self, payload):
-        if payload.message_id in self.verification.keys():
+        if payload.message_id in self.verification_assignments.keys():
             print("Warning: verification message deleted.")
+
+    def __init__(self, *args, **kwargs):
+        super(MindspeakerBot, self).__init__(*args, **kwargs)
+        self.verification_assignments = dict()
 
 
 bot = MindspeakerBot(config.PREFIX)
