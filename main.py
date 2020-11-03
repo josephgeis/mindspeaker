@@ -3,6 +3,7 @@ import discord.ext.commands as commands
 import discord
 import config
 import re
+from datetime import datetime as dt
 
 
 class MindspeakerBot(Bot):
@@ -38,7 +39,7 @@ class MindspeakerBot(Bot):
         if message.id in self.verification_assignments.keys():
             role_id = self.verification_assignments[message.id]
             role = message.guild.get_role(role_id)
-            await user.add_roles(role)
+            await user.add_roles(role, reason=dt.now().strftime("Accepted rules on %m/%d/%Y at %X."))
             await reaction.remove(user)
 
     async def on_raw_message_delete(self, payload):
