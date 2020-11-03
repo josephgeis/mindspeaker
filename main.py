@@ -15,7 +15,8 @@ class MindspeakerBot(Bot):
             channel = self.get_channel(chan)
             async with channel.typing():
                 await channel.purge(limit=None, check=None)
-                message: discord.Message = await channel.send("By reacting to this message, you agree to abide by this server's rules")
+                message: discord.Message = await channel.send(
+                    "By reacting to this message, you agree to abide by this server's rules")
                 await message.add_reaction(u"\u2705")
                 self.verification_assignments[message.id] = role
 
@@ -63,13 +64,13 @@ async def ping(ctx):
 
 @bot.command()
 @commands.check(is_elevated)
-async def nuke(ctx, channel_arg=None):
+async def nuke(ctx: commands.Context, channel_arg=None):
     channel_id = None
     channel = None
     if channel_arg is not None:
         match = re.match(r"\<#(\w*)\>", channel_arg)
         if match:
-            channel_id = match.group(1)
+            channel_id = int(match.group(1))
             channel = ctx.guild.get_channel(channel_id)
         else:
             return
@@ -80,9 +81,13 @@ async def nuke(ctx, channel_arg=None):
         return
 
     async with channel.typing():
-        await channel.purge(limit=None, check=None)
+        await channel.purge(limit=None, check=lambda m: m != ctx.message)
 
-    await ctx.send("Channel nuked!\nhttps://media.giphy.com/media/oe33xf3B50fsc/giphy.gif", delete_after=3)
+    await ctx.message.delete(delay=3)
+    await ctx.send(
+        f"Channel {channel_arg if channel != ctx.message.channel else ''}nuked!\nhttps://media.giphy.com/media/oe33xf3B50fsc/giphy.gif",
+        delete_after=3)
+
 
 if __name__ == '__main__':
     bot.run(config.TOKEN)
