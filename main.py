@@ -41,6 +41,10 @@ class MindspeakerBot(Bot):
             await user.add_roles(role)
             await reaction.remove(user)
 
+    async def on_raw_message_delete(self, payload):
+        if payload.message_id in self.verification.keys():
+            print("Warning: verification message deleted.")
+
 
 bot = MindspeakerBot(config.PREFIX)
 
