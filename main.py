@@ -1,3 +1,4 @@
+import requests
 from discord.ext.commands import Bot
 import discord.ext.commands as commands
 import discord
@@ -88,6 +89,41 @@ async def nuke(ctx: commands.Context, channel_arg=None):
     await ctx.send(
         f"Channel {channel_arg if channel != ctx.message.channel else ''}nuked!\nhttps://media.giphy.com/media/oe33xf3B50fsc/giphy.gif",
         delete_after=3)
+
+
+@bot.command()
+async def vote(ctx: commands.Context, state: str = None):
+    async with ctx.message.channel.typing():
+        data: list = requests.get(
+            "https://politics-elex-results.data.api.cnn.io/results/view/2020-national-races-PG.json").json()
+        state_data = [ss for ss in data if ss.get("stateAbbreviation") == state.upper()]
+
+    if state_data:
+        state_data = state_data[0]
+    else:
+        await ctx.send("No data found")
+        return
+
+    async with ctx.message.channel.typing():
+        candidates = [
+            "{emoji} {name} - {num} ({pct}%){check}".format(
+                emoji={"REP": ":red_circle:", "DEM": ":blue_circle:"}.get(candidate.get("majorParty"), ":black_circle"),
+                name=candidate.get("fullName"),
+                num=candidate.get("voteStr"),
+                pct=candidate.get("votePercentStr"),
+                check=" :white_check_mark:" if candidate.get("winner", False) else ""
+            )
+            for candidate in state_data.get("candidates", [])
+        ]
+
+        lines = ["**__Presidential Election Update__**",
+                 "**{state_name}** ({pct_votes}% reporting)".format(state_name=state_data.get("stateName"),
+                                                                    pct_votes=state_data.get("percentReporting")),
+                 *candidates]
+
+    await ctx.send(
+        "\n".join(lines)
+    )
 
 
 if __name__ == '__main__':
